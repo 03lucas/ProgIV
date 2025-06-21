@@ -5,26 +5,21 @@ const Movie = {
     async criar(dados){
         await db.query(`
             INSERT INTO movie (count, score, image, title) 
-            VALUES (
-                ${dados.count},
-                ${dados.score},
-                '${dados.image}',
-                '${dados.title}'
-            )
-        `);
+            VALUES ($1, $2, $3, $4)
+        `, [dados.count, dados.score, dados.image, dados.title]);
     },
 
     async atualizar(id, dados){
         await db.query(`
             UPDATE movie
             SET 
-                count = ${dados.count}, 
-                score = ${dados.score}, 
-                image = '${dados.image}',
-                title = '${dados.title}'
+                count = $1, 
+                score = $2, 
+                image = $3,
+                title = $4
             WHERE 
-                id = ${id}
-        `);
+                id = $5
+        `, [dados.count, dados.score, dados.image, dados.title, id]);
     },
 
     async listar(){
@@ -40,8 +35,8 @@ const Movie = {
         const movie = await db.query(`
             SELECT *
             FROM movie
-            WHERE id = ${id}
-        `);
+            WHERE id = $1
+        `, [id]);
         return movie.length > 0 ? movie[0] : null;
     },
 
@@ -49,8 +44,8 @@ const Movie = {
         await db.query(`
             DELETE FROM movie
             WHERE 
-                id = ${id}
-        `);
+                id = $1
+        `, [id]);
     }
 
 }

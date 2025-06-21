@@ -5,22 +5,18 @@ const Score = {
     async criar(dados){
         await db.query(`
             INSERT INTO score (movie_id, user_id, score_value) 
-            VALUES (
-                ${dados.movie_id},
-                ${dados.user_id},
-                ${dados.score_value}
-            )
-        `);
+            VALUES ($1, $2, $3)
+        `, [dados.movie_id, dados.user_id, dados.score_value]);
     },
 
     async atualizar(movie_id, user_id, dados){
         await db.query(`
             UPDATE score
             SET 
-                score_value = ${dados.score_value}
+                score_value = $1
             WHERE 
-                movie_id = ${movie_id} AND user_id = ${user_id}
-        `);
+                movie_id = $2 AND user_id = $3
+        `, [dados.score_value, movie_id, user_id]);
     },
 
     async listar(){
@@ -36,8 +32,8 @@ const Score = {
         const score = await db.query(`
             SELECT *
             FROM score
-            WHERE movie_id = ${movie_id} AND user_id = ${user_id}
-        `);
+            WHERE movie_id = $1 AND user_id = $2
+        `, [movie_id, user_id]);
         return score.length > 0 ? score[0] : null;
     },
 
@@ -45,9 +41,9 @@ const Score = {
         const lista = await db.query(`
             SELECT *
             FROM score
-            WHERE movie_id = ${movie_id}
+            WHERE movie_id = $1
             ORDER BY user_id
-        `);
+        `, [movie_id]);
         return lista;
     },
 
@@ -55,9 +51,9 @@ const Score = {
         const lista = await db.query(`
             SELECT *
             FROM score
-            WHERE user_id = ${user_id}
+            WHERE user_id = $1
             ORDER BY movie_id
-        `);
+        `, [user_id]);
         return lista;
     },
 
@@ -65,8 +61,8 @@ const Score = {
         await db.query(`
             DELETE FROM score
             WHERE 
-                movie_id = ${movie_id} AND user_id = ${user_id}
-        `);
+                movie_id = $1 AND user_id = $2
+        `, [movie_id, user_id]);
     }
 
 }
