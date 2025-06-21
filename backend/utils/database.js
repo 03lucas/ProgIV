@@ -12,9 +12,14 @@ const Database = {
         });
     },
 
-    async query(sql){
-        const result = await globalThis.db.query(sql);
-        return result.rows;
+    async query(sql, values = []){
+        const client = await globalThis.pool.connect();
+        try {
+            const result = await client.query(sql, values);
+            return result.rows;
+        } finally {
+            client.release();
+        }
     }
 }
 

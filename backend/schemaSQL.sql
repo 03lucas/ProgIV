@@ -14,7 +14,9 @@ create table movie (
 create table users (
 	id SERIAL PRIMARY KEY,
 	dt_criacao TIMESTAMP DEFAULT NOW(),
-	email VARCHAR(255)
+	email VARCHAR(255) UNIQUE,
+	senha VARCHAR(255),
+	tempero VARCHAR(255)
 );
 
 create table score (
