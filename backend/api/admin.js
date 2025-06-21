@@ -1,8 +1,22 @@
 const { Movie } = require('../model/movie');
 const { Users } = require('../model/users');
 const { Score } = require('../model/score');
+const cookieParser = require('cookie-parser');
 
 module.exports.rotas = function(app) {
+
+    app.use(cookieParser());
+    app.session = {};
+
+    function verificaUsuarioLogado(req, res, next){
+        if(!req.cookies.SESSION)
+            return res.status(401).send('Não está logado');
+    
+        if(!app.session[req.cookies.SESSION])
+            return res.status(401).send('Sessão inválida');
+    
+        next();
+    }
 
     // rotas movie
     app.get('/movies', async (req, res) => {
@@ -59,7 +73,11 @@ module.exports.rotas = function(app) {
     app.get('/users', async (req, res) => {
         try {
             const users = await Users.listar();
-            res.json(users);
+            res.json(users.map(u => {
+                delete u.senha;
+                delete u.tempero;
+                return u;
+            }));
         } catch (error) {
             res.status(500).send({ error: 'Ocorreu um erro ao buscar os usuários.' });
         }
@@ -67,19 +85,26 @@ module.exports.rotas = function(app) {
 
     app.post('/users', async (req, res) => {
         try {
-            await Users.criar(req.body);
-            res.status(201).send();
+            if (!req.body.email || !req.body.senha) {
+                return res.status(400).send({ error: 'Email e senha são obrigatórios.' });
+            }
+            const user = await Users.criar(req.body);
+            res.status(201).json(user);
         } catch (error) {
             res.status(500).send({ error: 'Ocorreu um erro ao criar o usuário.' });
         }
     });
 
     // rotas score
-    app.post('/scores', async (req, res) => {
+    app.post('/scores', verificaUsuarioLogado, async (req, res) => {
         try {
+            const idSessao = req.cookies.SESSION;
+            const usuarioLogado = app.session[idSessao];
+            
             // criar ou atualiza pontuação
             // recalcula a pontuação do filme
-            const { movie_id, user_id, score_value } = req.body;
+            const { movie_id, score_value } = req.body;
+            const user_id = usuarioLogado.id;
 
             // busca o usuário ou cria um novo
             let user = await Users.buscarPorId(user_id);
@@ -105,7 +130,7 @@ module.exports.rotas = function(app) {
             } else {
                 // cria score
                 await Score.criar({ movie_id, user_id, score_value });
-                movie.count++; // Incrementa o contador de avaliações
+                movie.count++; // incrementa contador
             }
 
             // recalcula o score do filme
@@ -127,6 +152,50 @@ module.exports.rotas = function(app) {
             console.error(error);
             res.status(500).send({ error: 'Ocorreu um erro ao salvar a avaliação.' });
         }
+    });
+
+    // rotas de autenticação
+    app.post('/login', async (req, res) => {
+        if(!req.body.email || !req.body.senha){
+            return res.status(400).send("Email ou senha faltando.");
+        }
+
+        const users = await Users.listar({ email: req.body.email });
+        if(users.length == 0){
+            return res.status(400).send("Usuário ou senha inválidos.");
+        }
+
+        const user = users[0];
+        const { hash } = await Users.criarHash(req.body.senha, user.tempero);
+
+        if(hash !== user.senha){
+            return res.status(400).send("Usuário ou senha inválidos.");
+        }
+
+        const idSessao = await Users.criaValorAleatorio(16);
+        delete user.senha;
+        delete user.tempero;
+        app.session[idSessao] = user;
+
+        res.cookie('SESSION', idSessao, {
+            httpOnly: true,
+            secure: true, // em produção, usar true
+            sameSite: 'strict'
+        });
+
+        res.status(200).json({ message: 'Login bem-sucedido!', user });
+    });
+
+    app.post('/logout', verificaUsuarioLogado, async (req, res) => {
+        delete app.session[req.cookies.SESSION];
+
+        res.clearCookie('SESSION', {
+            httpOnly: true,
+            secure: true, // em produção, usar true
+            sameSite: 'strict'
+        });
+    
+        res.status(204).end();
     });
 
 };
