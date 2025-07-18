@@ -5,6 +5,8 @@ const Database = {
         globalThis.pool = new Pool ({
             host:'localhost',
             user:'postgres',
+            password:'x',
+            database: 'progIV',
             port: '5432',
             max: 20,
             idleTimeoutMillis:30000,
