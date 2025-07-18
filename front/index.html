@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8" />
+    <title>Bmovie</title>
+
+    <script src="https://cdn.jsdelivr.net/gh/GCSBOSS/nice@0.0.1/dist/nice.min.js"></script>
+
+    <style>
+        :root {
+            --color-primary: #4D41C0;
+            --color-text: #4A4A4A;
+            --color-star: #FFBB3A;
+            --color-light-gray: #989898;
+            --color-background: #e8e8e8;
+            --color-white: #fff;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        html, body {
+            background-color: var(--color-background);
+            margin: 0;
+            padding: 0;
+        }
+
+        a, a:hover {
+            text-decoration: none;
+            color: unset;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        header {
+            background-color: var(--color-primary);
+            height: 60px;
+            display: flex;
+            align-items: center;
+            color: var(--color-white);
+        }
+
+        .bmovie-nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .bmovie-nav-content h1 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 24px;
+        }
+
+        .bmovie-contact-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .bmovie-contact-link {
+            margin: 0 0 0 10px;
+            font-size: 12px;
+        }
+
+        /* Movie Listing Styles */
+        .bmovie-listing-container {
+            padding: 20px 0;
+        }
+
+        .bmovie-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        /* Movie Card Styles */
+        .bmovie-card {
+            background-color: var(--color-white);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .bmovie-movie-card-image {
+            width: 100%;
+            aspect-ratio: 3 / 2;
+            object-fit: cover;
+        }
+
+        .bmovie-card-bottom-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            flex-grow: 1;
+        }
+
+        .bmovie-card-bottom-container h3 {
+            color: var(--color-text);
+            text-align: center;
+            font-size: 14px;
+            font-weight: 700;
+            margin: 0 0 10px 0;
+            min-height: 40px;
+        }
+
+        /* Movie Score and Stars */
+        .bmovie-score-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .bmovie-score-value {
+            margin: 0;
+            color: var(--color-star);
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .bmovie-stars-container {
+            display: flex;
+        }
+
+        .bmovie-stars-container svg {
+            width: 22px;
+            height: auto;
+            fill: var(--color-star);
+        }
+
+        .bmovie-score-count {
+            font-size: 12px;
+            color: var(--color-light-gray);
+            margin: 4px 0 0 0;
+        }
+
+        /* Button Styles */
+        .bmovie-btn {
+            background-color: var(--color-primary);
+            color: var(--color-white);
+            font-size: 14px;
+            font-weight: 700;
+            height: 40px;
+            width: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .bmovie-btn:hover {
+            background-color: #38308a;
+        }
+        
+        .bmovie-btn-cancel {
+             background-color: #6c757d;
+        }
+        
+        .bmovie-btn-cancel:hover {
+             background-color: #5a6268;
+        }
+
+        .bmovie-form-container, .bmovie-auth-container {
+            max-width: 480px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: var(--color-white);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .bmovie-auth-container {
+             padding: 40px;
+        }
+
+        .bmovie-form-container .bmovie-movie-card-image {
+            border-radius: 8px 8px 0 0;
+            max-width: 100%;
+        }
+
+        .bmovie-form-container .bmovie-card-bottom-container {
+            width: 100%;
+            border-radius: 0 0 8px 8px;
+        }
+
+        .bmovie-form {
+            width: 100%;
+            padding: 0 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: var(--color-light-gray);
+            margin-bottom: 5px;
+        }
+
+        .form-control {
+            width: 100%;
+            height: 40px;
+            padding: 0 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .bmovie-form-btn-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .auth-actions {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .auth-actions button {
+            background: none;
+            border: none;
+            color: var(--color-primary);
+            cursor: pointer;
+            font-weight: 700;
+        }
+        
+        .logout-button {
+            background: none;
+            border: 1px solid var(--color-white);
+            color: var(--color-white);
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .logout-button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <script src="main.js"></script>
+</body>
+</html>
