@@ -1,12 +1,8 @@
 const { Movie } = require('../model/movie');
 const { Users } = require('../model/users');
 const { Score } = require('../model/score');
-const cookieParser = require('cookie-parser');
 
 module.exports.rotas = function(app) {
-
-    app.use(cookieParser());
-    app.session = {};
 
     function verificaUsuarioLogado(req, res, next){
         if(!req.cookies.SESSION)
@@ -18,13 +14,25 @@ module.exports.rotas = function(app) {
         next();
     }
 
-    // rotas movie
+    // Rotas de Filmes (Movies)
     app.get('/movies', async (req, res) => {
         try {
             const movies = await Movie.listar();
             res.json(movies);
         } catch (error) {
-            res.status(500).send({ error: 'Ocorreu um erro ao buscar os filmes.' });
+            res.status(500).send({ error: 'Ocorreu um erro ao listar os filmes.' });
+        }
+    });
+
+    app.post('/movies', async (req, res) => {
+        try {
+            await Movie.criar({ 
+                title: req.body.title, 
+                image: req.body.image 
+            });
+            res.status(201).send();
+        } catch (error) {
+            res.status(500).send({ error: 'Ocorreu um erro ao criar o filme.' });
         }
     });
 
@@ -38,15 +46,6 @@ module.exports.rotas = function(app) {
             }
         } catch (error) {
             res.status(500).send({ error: 'Ocorreu um erro ao buscar o filme.' });
-        }
-    });
-
-    app.post('/movies', async (req, res) => {
-        try {
-            await Movie.criar(req.body);
-            res.status(201).send();
-        } catch (error) {
-            res.status(500).send({ error: 'Ocorreu um erro ao criar o filme.' });
         }
     });
 
@@ -69,7 +68,7 @@ module.exports.rotas = function(app) {
     });
 
 
-    // rotas users
+    // Rotas de Usuários (Users)
     app.get('/users', async (req, res) => {
         try {
             const users = await Users.listar();
@@ -89,57 +88,50 @@ module.exports.rotas = function(app) {
                 return res.status(400).send({ error: 'Email e senha são obrigatórios.' });
             }
             const user = await Users.criar(req.body);
-            res.status(201).json(user);
+            // Ensure password and salt are not returned
+            const safeUser = { id: user.id, email: user.email, dt_criacao: user.dt_criacao };
+            res.status(201).json(safeUser);
         } catch (error) {
+            // Check if it's a duplicate email error
+            if (error.code === '23505' && error.constraint === 'users_email_key') {
+                return res.status(400).send({ error: 'Este email já está em uso.' });
+            }
+            console.error('Error creating user:', error);
             res.status(500).send({ error: 'Ocorreu um erro ao criar o usuário.' });
         }
     });
 
-    // rotas score
+    // Rota de Avaliações (Scores)
     app.post('/scores', verificaUsuarioLogado, async (req, res) => {
         try {
             const idSessao = req.cookies.SESSION;
             const usuarioLogado = app.session[idSessao];
             
-            // criar ou atualiza pontuação
-            // recalcula a pontuação do filme
             const { movie_id, score_value } = req.body;
             const user_id = usuarioLogado.id;
 
-            // busca o usuário ou cria um novo
-            let user = await Users.buscarPorId(user_id);
-            if (!user) {
-                return res.status(404).send({ error: 'Usuário não encontrado.'});
-            }
-
-            // busca o filme
             let movie = await Movie.buscarPorId(movie_id);
             if (!movie) {
                 return res.status(404).send({ error: 'Filme não encontrado.' });
             }
 
-            // verifica se ja existe score para filme/usuário
             const existingScore = await Score.buscarPorChaveComposta(movie_id, user_id);
 
             let old_score_value = 0;
 
             if (existingScore) {
-                // atualiza o score
                 old_score_value = existingScore.score_value;
                 await Score.atualizar(movie_id, user_id, { score_value });
             } else {
-                // cria score
                 await Score.criar({ movie_id, user_id, score_value });
-                movie.count++; // incrementa contador
+                movie.count++;
             }
 
-            // recalcula o score do filme
             const totalScore = movie.score * (existingScore ? movie.count : (movie.count - 1));
             const newTotalScore = totalScore - old_score_value + score_value;
             movie.score = newTotalScore / movie.count;
             movie.score = parseFloat(movie.score.toFixed(1));
 
-            // atualiza os dados no bd
             await Movie.atualizar(movie_id, {
                 title: movie.title,
                 score: movie.score,
@@ -154,7 +146,7 @@ module.exports.rotas = function(app) {
         }
     });
 
-    // rotas de autenticação
+    // Rotas de Autenticação
     app.post('/login', async (req, res) => {
         if(!req.body.email || !req.body.senha){
             return res.status(400).send("Email ou senha faltando.");
@@ -179,7 +171,7 @@ module.exports.rotas = function(app) {
 
         res.cookie('SESSION', idSessao, {
             httpOnly: true,
-            secure: true, // em produção, usar true
+            secure: true, 
             sameSite: 'strict'
         });
 
@@ -191,11 +183,10 @@ module.exports.rotas = function(app) {
 
         res.clearCookie('SESSION', {
             httpOnly: true,
-            secure: true, // em produção, usar true
+            secure: true, 
             sameSite: 'strict'
         });
     
         res.status(204).end();
     });
-
 };
