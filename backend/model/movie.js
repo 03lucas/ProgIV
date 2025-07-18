@@ -5,8 +5,8 @@ const Movie = {
     async criar(dados){
         await db.query(`
             INSERT INTO movie (count, score, image, title) 
-            VALUES ($1, $2, $3, $4)
-        `, [dados.count, dados.score, dados.image, dados.title]);
+            VALUES (0, 0, $1, $2)
+        `, [dados.image, dados.title]);
     },
 
     async atualizar(id, dados){
